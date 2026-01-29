@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h4 class="card-title mb-4">Smart Recommendations</h4>
+        <p class="text-muted">Products that are selling well but running low on stock</p>
+        
+        {% if fast_selling_low_stock|length > 0 %}
+        <div class="alert alert-warning">
+          <strong>{{ fast_selling_low_stock|length }} products</strong> need immediate attention - they're selling fast but stock is low!
+        </div>
+        
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>SKU</th>
+                <th>Category</th>
+                <th>Sold (Last 30 days)</th>
+                <th>Low Stock Stores</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for rec in fast_selling_low_stock %}
+              <tr class="table-warning">
+                <td><strong>{{ rec.product.name }}</strong></td>
+                <td><small class="text-muted">{{ rec.product.sku }}</small></td>
+                <td><span class="badge bg-secondary">{{ rec.product.category or 'N/A' }}</span></td>
+                <td><span class="badge bg-success">{{ rec.sold_last_30 }} units</span></td>
+                <td>
+                  {% for store_info in rec.low_stock_stores %}
+                    <div class="mb-1">
+                      <small>
+                        <strong>{{ store_info.store }}:</strong> 
+                        {{ store_info.current_qty }} / {{ store_info.threshold }}
+                        <span class="badge bg-danger">LOW</span>
+                      </small>
+                    </div>
+                  {% endfor %}
+                </td>
+                <td>
+                  <a href="{{ url_for('product_search') }}?q={{ rec.product.sku }}" class="btn btn-sm btn-primary">
+                    View Details
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="alert alert-success">
+          Great news! All fast-selling products have adequate stock levels.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-12 mt-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Top Performing Products</h5>
+        <p class="text-muted small">These products have generated the most revenue in the last 30 days</p>
+        
+        {% if top_products|length > 0 %}
+        <div class="row g-3">
+          {% for product in top_products[:6] %}
+          <div class="col-md-4">
+            <div class="card h-100">
+              {% if product.image_url %}
+                {% if product.image_url.startswith('http') %}
+                <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}" style="height: 150px; object-fit: cover;">
+                {% else %}
+                <img src="{{ url_for('static', filename=product.image_url) }}" class="card-img-top" alt="{{ product.name }}" style="height: 150px; object-fit: cover;">
+                {% endif %}
+              {% else %}
+              <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
+                <span class="text-muted">No Image</span>
+              </div>
+              {% endif %}
+              <div class="card-body">
+                <h6 class="card-title">{{ product.name }}</h6>
+                <p class="card-text small text-muted mb-0">
+                  SKU: {{ product.sku }}<br>
+                  {% if product.category %}Category: {{ product.category }}{% endif %}
+                  {% if product.price %}<br>Price: ${{ "%.2f"|format(product.price) }}{% endif %}
+                </p>
+              </div>
+              <div class="card-footer bg-white">
+                <a href="{{ url_for('product_search') }}?q={{ product.sku }}" class="btn btn-sm btn-outline-primary w-100">
+                  View Product
+                </a>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">No sales data available yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

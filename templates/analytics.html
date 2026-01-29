@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-md-3">
+    <div class="card shadow-sm bg-primary text-white">
+      <div class="card-body">
+        <h6 class="card-subtitle mb-2 opacity-75">Total Revenue</h6>
+        <h3 class="card-title mb-0">${{ "%.2f"|format(total_revenue) }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card shadow-sm bg-success text-white">
+      <div class="card-body">
+        <h6 class="card-subtitle mb-2 opacity-75">Total Sales</h6>
+        <h3 class="card-title mb-0">{{ total_sales }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card shadow-sm bg-info text-white">
+      <div class="card-body">
+        <h6 class="card-subtitle mb-2 opacity-75">Top Products</h6>
+        <h3 class="card-title mb-0">{{ top_products|length }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card shadow-sm bg-warning text-dark">
+      <div class="card-body">
+        <h6 class="card-subtitle mb-2 opacity-75">Categories</h6>
+        <h3 class="card-title mb-0">{{ category_sales|length }}</h3>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Sales Trend (Last 7 Days)</h5>
+        <canvas id="salesChart" height="100"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Revenue by Store</h5>
+        <canvas id="storeChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mt-2">
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Top Products by Revenue</h5>
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>SKU</th>
+                <th>Units Sold</th>
+                <th>Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for name, sku, sold, revenue in top_products %}
+              <tr>
+                <td>{{ name }}</td>
+                <td><small class="text-muted">{{ sku }}</small></td>
+                <td><span class="badge bg-secondary">{{ sold }}</span></td>
+                <td><strong>${{ "%.2f"|format(revenue) }}</strong></td>
+              </tr>
+              {% endfor %}
+              {% if top_products|length == 0 %}
+              <tr><td colspan="4" class="text-muted">No sales data yet.</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Performance by Category</h5>
+        <canvas id="categoryChart"></canvas>
+        <div class="mt-3">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Units Sold</th>
+                <th>Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for cat, revenue, units in category_sales %}
+              <tr>
+                <td><strong>{{ cat }}</strong></td>
+                <td>{{ units }}</td>
+                <td>${{ "%.2f"|format(revenue) }}</td>
+              </tr>
+              {% endfor %}
+              {% if category_sales|length == 0 %}
+              <tr><td colspan="3" class="text-muted">No category data yet.</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  // Sales Trend Chart
+  const salesData = {{ daily_sales|tojson }};
+  const dates = Object.keys(salesData).reverse();
+  const values = dates.map(d => salesData[d]);
+  
+  new Chart(document.getElementById('salesChart'), {
+    type: 'line',
+    data: {
+      labels: dates.map(d => new Date(d).toLocaleDateString('en-US', {month: 'short', day: 'numeric'})),
+      datasets: [{
+        label: 'Revenue ($)',
+        data: values,
+        borderColor: 'rgb(102, 126, 234)',
+        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+
+  // Store Revenue Chart
+  const storeData = {{ sales_by_store|map(attribute='name')|list|tojson }};
+  const storeRevenue = {{ sales_by_store|map(attribute='revenue')|list|tojson }};
+  
+  new Chart(document.getElementById('storeChart'), {
+    type: 'doughnut',
+    data: {
+      labels: storeData,
+      datasets: [{
+        data: storeRevenue,
+        backgroundColor: [
+          'rgba(102, 126, 234, 0.8)',
+          'rgba(118, 75, 162, 0.8)',
+          'rgba(255, 99, 132, 0.8)',
+          'rgba(54, 162, 235, 0.8)',
+          'rgba(255, 206, 86, 0.8)',
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true
+    }
+  });
+
+  // Category Chart
+  const categories = {{ category_sales|map(attribute='0')|list|tojson }};
+  const catRevenue = {{ category_sales|map(attribute='revenue')|list|tojson }};
+  
+  new Chart(document.getElementById('categoryChart'), {
+    type: 'bar',
+    data: {
+      labels: categories,
+      datasets: [{
+        label: 'Revenue ($)',
+        data: catRevenue,
+        backgroundColor: 'rgba(102, 126, 234, 0.8)'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+</script>
+{% endblock %}

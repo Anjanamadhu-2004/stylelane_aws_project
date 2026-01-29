@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center">
+      <h2 class="h5 mb-0">Incoming Restock Requests</h2>
+      <span class="badge bg-secondary">{{ requests|length }} open</span>
+    </div>
+    <table class="table table-hover table-sm mt-3 align-middle">
+      <thead>
+        <tr><th>Store</th><th>Product</th><th>Qty</th><th>Status</th><th>Notes</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for req in requests %}
+          <tr>
+            <td>{{ req.inventory_item.store_rel.name }}</td>
+            <td>{{ req.inventory_item.product_rel.name }}</td>
+            <td>{{ req.quantity_requested }}</td>
+            <td>{{ req.status|capitalize }}</td>
+            <td>{{ req.notes or "-" }}</td>
+            <td>
+              <form class="d-flex gap-1" method="post">
+                <input type="hidden" name="request_id" value="{{ req.id }}">
+                {% if req.status == "pending" %}
+                  <input type="hidden" name="action" value="accept">
+                  <button class="btn btn-sm btn-success">Accept</button>
+                  <button class="btn btn-sm btn-outline-danger" name="action" value="reject" formnovalidate>Reject</button>
+                {% elif req.status in ["approved", "pending"] %}
+                  <input type="hidden" name="action" value="ship">
+                  <input class="form-control form-control-sm" name="tracking_info" placeholder="Tracking" style="max-width:140px">
+                  <button class="btn btn-sm btn-primary">Mark Shipped</button>
+                {% elif req.status == "shipped" %}
+                  <span class="badge bg-success">Shipped</span>
+                {% else %}
+                  <span class="text-muted small">Closed</span>
+                {% endif %}
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        {% if requests|length == 0 %}
+          <tr><td colspan="6" class="text-muted">No open requests.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

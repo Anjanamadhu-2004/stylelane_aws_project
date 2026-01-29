@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h2 class="h5">Create Store</h2>
+        <form method="post">
+          <input type="hidden" name="action" value="create_store">
+          <div class="mb-2">
+            <label class="form-label">Store name</label>
+            <input class="form-control" name="store_name" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Location</label>
+            <input class="form-control" name="store_location">
+          </div>
+          <button class="btn btn-primary btn-sm">Create</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h2 class="h5">Create Store Manager</h2>
+        <form method="post">
+          <input type="hidden" name="action" value="create_manager">
+          <div class="mb-2">
+            <label class="form-label">Username</label>
+            <input class="form-control" name="manager_username" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Password</label>
+            <input class="form-control" name="manager_password" type="password" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Store</label>
+            <select class="form-select" name="manager_store_id" required>
+              <option value="">Select store</option>
+              {% for store in stores %}
+                <option value="{{ store.id }}">{{ store.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm">Create</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h2 class="h5">Create Supplier</h2>
+        <form method="post">
+          <input type="hidden" name="action" value="create_supplier">
+          <div class="mb-2">
+            <label class="form-label">Username</label>
+            <input class="form-control" name="supplier_username" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Password</label>
+            <input class="form-control" name="supplier_password" type="password" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Supplier name</label>
+            <input class="form-control" name="supplier_name">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Contact email</label>
+            <input class="form-control" name="supplier_email">
+          </div>
+          <button class="btn btn-primary btn-sm">Create</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mt-3">
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <h2 class="h5 mb-0">Stores</h2>
+          <span class="badge bg-primary">{{ stores|length }} stores</span>
+        </div>
+        <table class="table table-sm mt-2">
+          <thead>
+            <tr><th>Name</th><th>Location</th></tr>
+          </thead>
+          <tbody>
+            {% for store in stores %}
+              <tr><td>{{ store.name }}</td><td>{{ store.location or "-" }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <h2 class="h5 mb-0">Users</h2>
+          <span class="badge bg-secondary">{{ managers|length + suppliers|length }} accounts</span>
+        </div>
+        <h6 class="mt-3">Store Managers</h6>
+        <ul class="list-group list-group-flush small">
+          {% for m in managers %}
+            <li class="list-group-item">{{ m.username }} — Store {{ m.store.name if m.store else "Unassigned" }}</li>
+          {% endfor %}
+          {% if managers|length == 0 %}
+            <li class="list-group-item text-muted">No managers yet.</li>
+          {% endif %}
+        </ul>
+        <h6 class="mt-3">Suppliers</h6>
+        <ul class="list-group list-group-flush small">
+          {% for s in suppliers %}
+            <li class="list-group-item">{{ s.username }} — {{ s.supplier_name or "Supplier" }}</li>
+          {% endfor %}
+          {% if suppliers|length == 0 %}
+            <li class="list-group-item text-muted">No suppliers yet.</li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm mt-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between">
+      <div>
+        <h2 class="h5 mb-0">Inventory Overview</h2>
+        <small>Low-stock items highlighted. Sales total: ${{ "%.2f"|format(sales_total) }}</small>
+      </div>
+      <span class="badge bg-warning text-dark">{{ low_stock_count }} low-stock</span>
+    </div>
+    <div class="row g-3 mt-2">
+      {% for inv, store, product in inventory %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 {% if inv.is_low %}border-warning{% endif %}">
+          {% if product.image_url %}
+            {% if product.image_url.startswith('http') %}
+            <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}" style="height: 180px; object-fit: cover;">
+            {% else %}
+            <img src="{{ url_for('static', filename=product.image_url) }}" class="card-img-top" alt="{{ product.name }}" style="height: 180px; object-fit: cover;">
+            {% endif %}
+          {% else %}
+          <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 180px;">
+            <span class="text-muted small">No Image</span>
+          </div>
+          {% endif %}
+          <div class="card-body">
+            <h6 class="card-title">{{ product.name }}</h6>
+            <p class="card-text small mb-2">
+              <strong>Store:</strong> {{ store.name }}<br>
+              <strong>SKU:</strong> {{ product.sku }}<br>
+              {% if product.category %}<strong>Category:</strong> {{ product.category }}<br>{% endif %}
+              {% if product.size %}<strong>Size:</strong> {{ product.size }}<br>{% endif %}
+              {% if product.color %}<strong>Color:</strong> {{ product.color }}<br>{% endif %}
+              {% if product.price %}<strong>Price:</strong> ${{ "%.2f"|format(product.price) }}{% endif %}
+            </p>
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <small><strong>Stock:</strong> {{ inv.quantity }}</small><br>
+                <small class="text-muted">Threshold: {{ inv.low_stock_threshold }}</small>
+              </div>
+              <span class="badge {% if inv.is_low %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                {{ "Low Stock" if inv.is_low else "OK" }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      {% if inventory|length == 0 %}
+      <div class="col-12">
+        <p class="text-muted text-center">No inventory items yet.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

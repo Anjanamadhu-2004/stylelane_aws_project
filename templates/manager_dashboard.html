@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h5">Add Product to Store</h2>
+        <form method="post">
+          <input type="hidden" name="action" value="add_product">
+          <div class="row g-2">
+            <div class="col-md-6">
+              <label class="form-label">Name</label>
+              <input class="form-control" name="product_name" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">SKU</label>
+              <input class="form-control" name="product_sku" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Category</label>
+              <input class="form-control" name="product_category" placeholder="e.g., Tops, Bottoms">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Size</label>
+              <input class="form-control" name="product_size" placeholder="e.g., S, M, L, 32">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Color</label>
+              <input class="form-control" name="product_color" placeholder="e.g., Blue, Red">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Price ($)</label>
+              <input class="form-control" name="product_price" type="number" step="0.01" placeholder="Selling price">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Cost Price ($)</label>
+              <input class="form-control" name="product_cost_price" type="number" step="0.01" placeholder="Cost price">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Image URL</label>
+              <input class="form-control" name="product_image_url" placeholder="https://...">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" name="product_description" rows="2" placeholder="Product description"></textarea>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm mt-2">Add / Link Product</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h5">Record Sale</h2>
+        <form method="post">
+          <input type="hidden" name="action" value="record_sale">
+          <div class="row g-2">
+            <div class="col-md-6">
+              <label class="form-label">Inventory Item</label>
+              <select class="form-select" name="inventory_id" required>
+                {% for inv in inventory_items %}
+                  <option value="{{ inv.id }}">{{ inv.product_rel.name }} ({{ inv.quantity }} in stock)</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Qty</label>
+              <input class="form-control" name="sale_quantity" type="number" min="1" value="1">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Unit price</label>
+              <input class="form-control" name="sale_price" type="number" min="0" step="0.01" value="0">
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm mt-2">Record</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm mt-3">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center">
+      <h2 class="h5 mb-0">Inventory</h2>
+      <span class="badge bg-warning text-dark">{{ inventory_items|selectattr('is_low')|list|length }} low-stock</span>
+    </div>
+    <div class="row g-3">
+      {% for inv in inventory_items %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 {% if inv.is_low %}border-warning{% endif %}">
+          {% if inv.product_rel.image_url %}
+            {% if inv.product_rel.image_url.startswith('http') %}
+            <img src="{{ inv.product_rel.image_url }}" class="card-img-top" alt="{{ inv.product_rel.name }}" style="height: 200px; object-fit: cover;">
+            {% else %}
+            <img src="{{ url_for('static', filename=inv.product_rel.image_url) }}" class="card-img-top" alt="{{ inv.product_rel.name }}" style="height: 200px; object-fit: cover;">
+            {% endif %}
+          {% else %}
+          <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+            <span class="text-muted">No Image</span>
+          </div>
+          {% endif %}
+          <div class="card-body">
+            <h6 class="card-title">{{ inv.product_rel.name }}</h6>
+            <p class="card-text small text-muted mb-2">
+              <strong>SKU:</strong> {{ inv.product_rel.sku }}<br>
+              {% if inv.product_rel.category %}<strong>Category:</strong> {{ inv.product_rel.category }}<br>{% endif %}
+              {% if inv.product_rel.size %}<strong>Size:</strong> {{ inv.product_rel.size }}<br>{% endif %}
+              {% if inv.product_rel.color %}<strong>Color:</strong> {{ inv.product_rel.color }}<br>{% endif %}
+              {% if inv.product_rel.price %}<strong>Price:</strong> ${{ "%.2f"|format(inv.product_rel.price) }}<br>{% endif %}
+              {% if inv.product_rel.cost_price and inv.product_rel.price %}
+              <strong>Margin:</strong> <span class="badge bg-success">{{ "%.1f"|format(inv.product_rel.profit_margin) }}%</span><br>
+              {% endif %}
+            </p>
+            <div class="mb-2">
+              <small><strong>Stock:</strong></small>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge {% if inv.is_low %}bg-warning text-dark{% else %}bg-success{% endif %} fs-6">
+                  {{ inv.quantity }} units
+                </span>
+                <small class="text-muted">Threshold: {{ inv.low_stock_threshold }}</small>
+              </div>
+            </div>
+            <form method="post" class="mt-2">
+              <input type="hidden" name="action" value="update_quantity">
+              <input type="hidden" name="inventory_id" value="{{ inv.id }}">
+              <div class="row g-2">
+                <div class="col-6">
+                  <input class="form-control form-control-sm" name="quantity" type="number" value="{{ inv.quantity }}" placeholder="Qty">
+                </div>
+                <div class="col-6">
+                  <input class="form-control form-control-sm" name="threshold" type="number" value="{{ inv.low_stock_threshold }}" placeholder="Threshold">
+                </div>
+                <div class="col-12">
+                  <button class="btn btn-outline-primary btn-sm w-100">Update Stock</button>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="card-footer bg-white">
+            <a href="{{ url_for('product_barcode', product_id=inv.product_rel.id) }}" class="btn btn-sm btn-outline-secondary w-100">
+              Generate Barcode
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      {% if inventory_items|length == 0 %}
+      <div class="col-12">
+        <p class="text-muted text-center">No inventory items yet. Add products above.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm mt-3">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center">
+      <h2 class="h5 mb-0">Restock Requests</h2>
+      <span class="badge bg-secondary">{{ restocks|length }} requests</span>
+    </div>
+    <table class="table table-sm mt-2 align-middle">
+      <thead>
+        <tr><th>Product</th><th>Qty</th><th>Status</th><th>Notes</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        {% for req in restocks %}
+          <tr>
+            <td>{{ req.inventory_item.product_rel.name }}</td>
+            <td>{{ req.quantity_requested }}</td>
+            <td>{{ req.status|capitalize }}</td>
+            <td>{{ req.notes or "-" }}</td>
+            <td>
+              {% if req.status == "pending" %}
+                <span class="badge bg-warning text-dark">Pending supplier</span>
+              {% elif req.status == "approved" %}
+                <span class="badge bg-info text-dark">Approved</span>
+              {% elif req.status == "shipped" %}
+                <span class="badge bg-success">Shipped</span>
+              {% else %}
+                <span class="badge bg-secondary">{{ req.status|capitalize }}</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        {% if restocks|length == 0 %}
+          <tr><td colspan="5" class="text-muted">No restock requests yet.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+    <h6 class="mt-3">Request Restock</h6>
+    <form class="row g-2" method="post">
+      <input type="hidden" name="action" value="request_restock">
+      <div class="col-md-4">
+        <select class="form-select" name="inventory_id" required>
+          {% for inv in inventory_items %}
+            <option value="{{ inv.id }}">{{ inv.product_rel.name }} ({{ inv.quantity }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <input class="form-control" name="request_quantity" type="number" min="1" value="10">
+      </div>
+      <div class="col-md-4">
+        <input class="form-control" name="request_notes" placeholder="Notes for supplier">
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-primary w-100">Send</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#667eea"/>
+      <stop offset="100%" stop-color="#764ba2"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg)"/>
+  <g fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M140 150c0-33 18-50 60-50 34 0 60 12 60 45 0 18-9 31-24 40"/>
+    <path d="M190 145c0 10 6 18 16 22"/>
+    <path d="M80 190l40 130h160l40-130-80-40-40 40-40-40z" fill="rgba(255,255,255,0.08)"/>
+  </g>
+  <text x="200" y="330" text-anchor="middle" fill="#ffffff" font-family="Segoe UI, system-ui, -apple-system" font-size="22">
+    StyleLane Product
+  </text>
+</svg>
+
