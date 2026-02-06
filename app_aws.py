@@ -35,7 +35,7 @@ shipments_table = dynamodb.Table("stylelane-shipments")
 # SNS Topic ARN
 # (Paste real ARN during deployment OR use env variable)
 # --------------------------------------------------
-SNS_TOPIC_ARN = os.environ.get("SNS_TOPIC_ARN", "")
+SNS_TOPIC_ARN = os.environ.get("SNS_TOPIC_ARN", "arn:aws:sns:us-east-1:122610488902:stylelane_aws_project")
 
 # --------------------------------------------------
 # Helper Functions
